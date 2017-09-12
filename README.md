@@ -1,2 +1,2 @@
-# xacc-projectq
-Plugins to XACC for interacting with ProjectQ
+# xacc-rigetti
+Plugins to XACC to compile Quil and execute code on the Rigetti Forest API.

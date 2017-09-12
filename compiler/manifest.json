@@ -1,0 +1,6 @@
+{
+  "bundle.symbolic_name" : "xacc_projectq_compiler",
+  "bundle.activator" : true,
+  "bundle.name" : "XACC ProjectQ Qasm Compiler",
+  "bundle.description" : "This bundle provides a ProjectQ Qasm Compiler for Gate Model QC."
+}
