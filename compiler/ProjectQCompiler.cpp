@@ -89,9 +89,6 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 				auto functionName = lineStrs[1];
 				functionName = functionName.substr(0, functionName.find_first_of("("));
 				function = std::make_shared<GateFunction>(functionName);
-			} else if (lineStrs[0] == "Allocate") {
-
-
 			} else if (boost::contains(lineStrs[0], "(")) {
 
 				// This gate is parameterized
@@ -140,19 +137,54 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 				}
 
 				std::vector<int> qubitIds;
+				bool isAGateOnMultipleQbits = false;
 				for (int i = 1; i < lineStrs.size(); i++) {
 					if (boost::contains(lineStrs[i], qubitVarName)) {
+
 						auto temp = lineStrs[i];
 						boost::replace_all(temp, qubitVarName, "");
 						boost::replace_all(temp, "[", "");
 						boost::replace_all(temp, "]", "");
 
-						qubitIds.push_back(std::stoi(temp));
+						if (boost::contains(temp, "-")) {
+							std::cout << "CONTAINS: " << temp << "\n";
+							isAGateOnMultipleQbits = true;
+							std::vector<std::string> split;
+							boost::split(split, temp, boost::is_any_of("-"));
+							int begin = std::stoi(split[0]);
+							int end = std::stoi(split[1]);
+							qubitIds.resize(end-begin+1);
+
+							std::iota(qubitIds.begin(), qubitIds.end(), begin);
+
+							std::cout << gate << " on ";
+							for (auto q : qubitIds) {
+								std::cout << q << ", ";
+							}
+							std::cout << "\n";
+						} else {
+							qubitIds.push_back(std::stoi(temp));
+						}
 					}
 				}
-				auto inst = gateRegistry->create(gate, qubitIds);
 
-				function->addInstruction(inst);
+				if (isAGateOnMultipleQbits) {
+					for (auto q : qubitIds) {
+						auto inst = gateRegistry->create(gate, std::vector<int>{q});
+
+						if (gate == "Measure") {
+							InstructionParameter p(q);
+							inst->setParameter(0, p);
+						}
+
+						function->addInstruction(inst);
+					}
+
+				} else {
+					auto inst = gateRegistry->create(gate, qubitIds);
+
+					function->addInstruction(inst);
+				}
 
 			}
 		}

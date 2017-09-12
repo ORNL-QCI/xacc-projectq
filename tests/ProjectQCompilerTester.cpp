@@ -77,12 +77,15 @@ Rx(10.9955742876) | Qureg[0]
 H | Qureg[0]
 H | Qureg[1]
 Rx(1.57079632679) | Qureg[2]
+Measure | Qureg[0-3]
 })src";
 
 
 	auto compiler = std::make_shared<ProjectQCompiler>();
 	auto ir = compiler->compile(src);
 	auto qir = std::dynamic_pointer_cast<GateQIR>(ir);
+
+	std::cout << qir->getKernels()[0]->toString("qreg") << "\n";
 
 	const std::string expected = R"expected(X qreg0
 X qreg1
@@ -113,6 +116,10 @@ Rx(10.9956) qreg0
 H qreg0
 H qreg1
 Rx(1.5708) qreg2
+Measure qreg0
+Measure qreg1
+Measure qreg2
+Measure qreg3
 )expected";
 
 	BOOST_VERIFY(expected == qir->getKernels()[0]->toString("qreg"));

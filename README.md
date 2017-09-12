@@ -1,2 +1,2 @@
-# xacc-rigetti
-Plugins to XACC to compile Quil and execute code on the Rigetti Forest API.
+# xacc-projectq
+Plugins to XACC to translate ProjectQ Qasm to XACC IR
