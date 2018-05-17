@@ -1,4 +1,3 @@
-
 /***********************************************************************************
  * Copyright (c) 2016, UT-Battelle
  * All rights reserved.
@@ -29,19 +28,16 @@
  *   Initial API and implementation - Alex McCaskey
  *
  **********************************************************************************/
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE QuilCompilerTester
-
-#include <boost/test/included/unit_test.hpp>
+#include <gtest/gtest.h>
 #include "ProjectQCompiler.hpp"
-#include "GateQIR.hpp"
+#include "GateIR.hpp"
 #include "CountGatesOfTypeVisitor.hpp"
 
 using namespace xacc;
 
 using namespace xacc::quantum;
 
-BOOST_AUTO_TEST_CASE(checkTeleportProjectQ) {
+TEST(ProjectQCompilerTester, checkTeleportProjectQ) {
 
 	const std::string src = R"src(__qpu__ testF() {
 Allocate | Qureg[0]
@@ -83,7 +79,7 @@ Measure | Qureg[0-3]
 
 	auto compiler = std::make_shared<ProjectQCompiler>();
 	auto ir = compiler->compile(src);
-	auto qir = std::dynamic_pointer_cast<GateQIR>(ir);
+	auto qir = std::dynamic_pointer_cast<GateIR>(ir);
 
 	std::cout << qir->getKernels()[0]->toString("qreg") << "\n";
 
@@ -122,5 +118,12 @@ Measure qreg2
 Measure qreg3
 )expected";
 
-	BOOST_VERIFY(expected == qir->getKernels()[0]->toString("qreg"));
+	EXPECT_TRUE(expected == qir->getKernels()[0]->toString("qreg"));
+}
+int main(int argc, char** argv) {
+	xacc::Initialize();
+   ::testing::InitGoogleTest(&argc, argv);
+   auto ret = RUN_ALL_TESTS();
+   xacc::Finalize();
+   return ret;
 }

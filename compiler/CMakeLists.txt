@@ -29,8 +29,8 @@
 #
 #**********************************************************************************/
 
-set (PACKAGE_NAME "ProjectQ XACC Qasm Compiler")
-set (PACKAGE_DESCIPTION "ProjectQ XACC Qasm Compiler Bundle")
+set (PACKAGE_NAME "ProjectQ XACC Compiler")
+set (PACKAGE_DESCIPTION "ProjectQ XACC Compiler Bundle")
 set (LIBRARY_NAME xacc-projectq-compiler)
 
 file (GLOB_RECURSE HEADERS *.hpp)
@@ -53,10 +53,10 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES
   )
 
 if(BUILD_SHARED_LIBS)
-  set_target_properties(${LIBRARY_NAME} PROPERTIES
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN 1
-    )
+	#  set_target_properties(${LIBRARY_NAME} PROPERTIES
+	#    CXX_VISIBILITY_PRESET hidden
+	#    VISIBILITY_INLINES_HIDDEN 1
+	#    )
 endif()
 
 # Embed meta-data from a manifest.json file
@@ -67,7 +67,14 @@ usFunctionEmbedResources(TARGET ${LIBRARY_NAME}
     manifest.json
   )
 
-target_link_libraries(${LIBRARY_NAME} ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${XACC_LIBRARIES})
+target_link_libraries(${LIBRARY_NAME} ${XACC_LIBRARIES})
+if(APPLE)
+   set_target_properties(${LIBRARY_NAME} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+   set_target_properties(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+else()
+   set_target_properties(${LIBRARY_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+   set_target_properties(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-shared")
+endif()
 
-install(TARGETS ${LIBRARY_NAME} DESTINATION ${XACC_ROOT}/lib/plugins/compilers)
+install(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/plugins) 
 

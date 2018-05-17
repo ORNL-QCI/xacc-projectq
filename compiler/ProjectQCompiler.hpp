@@ -30,8 +30,6 @@
  **********************************************************************************/
 #ifndef IMPLS_PROJECTQ_PROJECTQCOMPILER_HPP_
 #define IMPLS_PROJECTQ_PROJECTQCOMPILER_HPP_
-
-
 #include "Compiler.hpp"
 #include "Utils.hpp"
 #include <boost/algorithm/string.hpp>

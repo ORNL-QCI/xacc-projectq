@@ -28,7 +28,7 @@
  *   Initial API and implementation - Alex McCaskey
  *
  **********************************************************************************/
-#include "GateQIR.hpp"
+#include "GateIR.hpp"
 #include <boost/tokenizer.hpp>
 #include "ProjectQCompiler.hpp"
 
@@ -50,9 +50,9 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 	// Need to analyze string for function calls
 	// FIXME for now just assume one function
 
-	auto ir = std::make_shared<GateQIR>();
+	auto ir = std::make_shared<GateIR>();
 	std::shared_ptr<GateFunction> function;
-	auto gateRegistry = GateInstructionRegistry::instance();
+	auto gateRegistry = xacc::getService<IRProvider>("gate");//GateInstructionRegistry::instance();
 	std::map<std::string, std::string> projectQGatesToXACC { { "X", "X" }, {
 			"CX", "CNOT" }, { "H", "H" }, { "Rx", "Rx" }, { "Ry", "Ry" }, {
 			"Rz", "Rz" } };
@@ -71,7 +71,6 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 	std::copy(allocateTokens.begin(), allocateTokens.end(),
 			std::back_inserter<std::vector<std::string> >(allocateSplit));
 	auto qubitVarName = allocateSplit[1].substr(0, allocateSplit[1].find_first_of("["));
-
 
 	boost::char_separator<char> sep("\n");
 	boost::tokenizer<boost::char_separator<char> > tokens(src, sep);
@@ -121,7 +120,7 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 					}
 				}
 
-				auto inst = gateRegistry->create(pqGate, qubitIds);
+				auto inst = gateRegistry->createInstruction(pqGate, qubitIds);
 				int i = 0;
 				for(auto p : params) {
 					inst->setParameter(i, p);
@@ -170,7 +169,7 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 
 				if (isAGateOnMultipleQbits) {
 					for (auto q : qubitIds) {
-						auto inst = gateRegistry->create(gate, std::vector<int>{q});
+						auto inst = gateRegistry->createInstruction(gate, std::vector<int>{q});
 
 						if (gate == "Measure") {
 							InstructionParameter p(q);
@@ -181,7 +180,7 @@ std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
 					}
 
 				} else {
-					auto inst = gateRegistry->create(gate, qubitIds);
+					auto inst = gateRegistry->createInstruction(gate, qubitIds);
 
 					function->addInstruction(inst);
 				}
