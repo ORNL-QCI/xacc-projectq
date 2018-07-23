@@ -28,36 +28,20 @@
  *   Initial implementation - H. Charles Zhao
  *
  **********************************************************************************/
-#ifndef XACC_PROJECTQ_PROJECTQTOXACCLISTENER_H
-#define XACC_PROJECTQ_PROJECTQTOXACCLISTENER_H
+#ifndef XACC_PROJECTQ_ERRORLISTENER_HPP
+#define XACC_PROJECTQ_ERRORLISTENER_HPP
 
-#include "ProjectQBaseListener.h"
-#include "IR.hpp"
-#include "IRProvider.hpp"
+using namespace antlr4;
 
-using namespace projectq;
-
-namespace xacc {
-    namespace quantum {
-        class ProjectQToXACCListener : public ProjectQBaseListener {
-            std::shared_ptr<IR> ir;
-            std::shared_ptr<IRProvider> gateRegistry;
-            std::map<std::string, std::shared_ptr<Function>> functions;
-            std::shared_ptr<Function> curFunc;
-        public:
-            explicit ProjectQToXACCListener(std::shared_ptr<IR>);
-
-            void enterXacckernel(ProjectQParser::XacckernelContext *ctx);
-
-            void exitXacckernel(ProjectQParser::XacckernelContext *ctx);
-
-            void exitKernelcall(ProjectQParser::KernelcallContext *ctx);
-
-            void exitGate(ProjectQParser::GateContext *ctx);
-
-            void exitMeasure(ProjectQParser::MeasureContext *ctx);
-        };
+class ProjectQErrorListener : public BaseErrorListener {
+public:
+    void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line, size_t charPositionInLine,
+                     const std::__cxx11::string &msg, std::__exception_ptr::exception_ptr e) override {
+        std::ostringstream output;
+        output << "Invalid ProjectQ source: ";
+        output << "line " << line << ":" << charPositionInLine << " " << msg;
+        xacc::error(output.str());
     }
-}
+};
 
-#endif //XACC_PROJECTQ_PROJECTQTOXACCLISTENER_H
+#endif //XACC_PROJECTQ_ERRORLISTENER_HPP

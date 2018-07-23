@@ -36,6 +36,7 @@
 #include "ProjectQParser.h"
 #include "XACC.hpp"
 #include "ProjectQToXACCListener.hpp"
+#include "ProjectQErrorListener.hpp"
 
 using namespace projectq;
 using namespace antlr4;
@@ -57,7 +58,8 @@ namespace xacc {
             ProjectQLexer lexer(&input);
             CommonTokenStream tokens(&lexer);
             ProjectQParser parser(&tokens);
-            // TODO: error listener
+            parser.removeErrorListeners();
+            parser.addErrorListener(new ProjectQErrorListener());
 
             auto ir(xacc::getService<IRProvider>("gate")->createIR());
 
