@@ -26,189 +26,53 @@
  *
  * Contributors:
  *   Initial API and implementation - Alex McCaskey
+ *   ANTLR compiler implementation - H. Charles Zhao
  *
  **********************************************************************************/
-#include "GateIR.hpp"
-#include <boost/tokenizer.hpp>
 #include "ProjectQCompiler.hpp"
+#include <boost/tokenizer.hpp>
+#include "IRProvider.hpp"
+#include "ProjectQLexer.h"
+#include "ProjectQParser.h"
+#include "XACC.hpp"
+#include "ProjectQToXACCListener.hpp"
+
+using namespace projectq;
+using namespace antlr4;
 
 namespace xacc {
 
-namespace quantum {
+    namespace quantum {
 
-ProjectQCompiler::ProjectQCompiler() {
-}
+        ProjectQCompiler::ProjectQCompiler() = default;
 
-std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src,
-		std::shared_ptr<Accelerator> acc) {
-	accelerator = acc;
-	return compile(src);
-}
+        std::shared_ptr<IR> ProjectQCompiler::compile(const std::string &src,
+                                                      std::shared_ptr<Accelerator> acc) {
+            accelerator = acc;
+            return compile(src);
+        }
 
-std::shared_ptr<IR> ProjectQCompiler::compile(const std::string& src) {
+        std::shared_ptr<IR> ProjectQCompiler::compile(const std::string &src) {
+            ANTLRInputStream input(src);
+            ProjectQLexer lexer(&input);
+            CommonTokenStream tokens(&lexer);
+            ProjectQParser parser(&tokens);
+            // TODO: error listener
 
-	// Need to analyze string for function calls
-	// FIXME for now just assume one function
+            auto ir(xacc::getService<IRProvider>("gate")->createIR());
 
-	auto ir = std::make_shared<GateIR>();
-	std::shared_ptr<GateFunction> function;
-	auto gateRegistry = xacc::getService<IRProvider>("gate");//GateInstructionRegistry::instance();
-	std::map<std::string, std::string> projectQGatesToXACC { { "X", "X" }, {
-			"CX", "CNOT" }, { "H", "H" }, { "Rx", "Rx" }, { "Ry", "Ry" }, {
-			"Rz", "Rz" } };
+            tree::ParseTree *tree(parser.xaccsrc());
+            ProjectQToXACCListener listener(ir);
+            tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
 
-	// find first occurrence of Allocate
-	auto srcBegin = src.begin();
-	auto endLine = src.begin();
-	auto location = src.find_first_of("\n");
-	auto secondlocation = src.find_first_of("\n", location+1);
-	std::advance(srcBegin, location+1);
-	std::advance(endLine, secondlocation);
-	std::string allocateLine(srcBegin, endLine);
-	boost::char_separator<char> allocatesep(" | ");
-	boost::tokenizer<boost::char_separator<char> > allocateTokens(allocateLine, allocatesep);
-	std::vector<std::string> allocateSplit;
-	std::copy(allocateTokens.begin(), allocateTokens.end(),
-			std::back_inserter<std::vector<std::string> >(allocateSplit));
-	auto qubitVarName = allocateSplit[1].substr(0, allocateSplit[1].find_first_of("["));
+            return ir;
+        }
 
-	boost::char_separator<char> sep("\n");
-	boost::tokenizer<boost::char_separator<char> > tokens(src, sep);
-	for (auto t : tokens) {
-		boost::trim(t);
-		if (t != "}" && !boost::contains(t, "Allocate")) {
-			boost::char_separator<char> subsep(" | ");
-			boost::tokenizer<boost::char_separator<char> > subtokens(t, subsep);
+        const std::string ProjectQCompiler::translate(const std::string &bufferVariable,
+                                                      std::shared_ptr<Function> function) {
+            return "";
+        }
 
-			std::vector<std::string> lineStrs;
-			std::copy(subtokens.begin(), subtokens.end(),
-					std::back_inserter<std::vector<std::string> >(lineStrs));
-
-			if (lineStrs[0] == "__qpu__") {
-				auto functionName = lineStrs[1];
-				functionName = functionName.substr(0, functionName.find_first_of("("));
-				function = std::make_shared<GateFunction>(functionName);
-			} else if (boost::contains(lineStrs[0], "(")) {
-
-				// This gate is parameterized
-				auto firstParen = lineStrs[0].find_first_of("(");
-				auto secondParen = lineStrs[0].find_first_of(")");
-				auto pqGate = lineStrs[0].substr(0, firstParen);
-				auto paramStr = lineStrs[0].substr(firstParen + 1,
-						secondParen - firstParen - 1);
-
-				std::vector<InstructionParameter> params;
-				std::vector<std::string> splitOnComma;
-				boost::split(splitOnComma, paramStr, boost::is_any_of(","));
-				for (auto s : splitOnComma) {
-					std::stringstream ss;
-					ss << std::setprecision(10) << std::fixed << s;
-					double d;
-					ss >> d;
-					params.push_back(InstructionParameter(d)); //std::stod(s)));
-				}
-
-				std::vector<int> qubitIds;
-				for (int i = 1; i < lineStrs.size(); i++) {
-					if (boost::contains(lineStrs[i], qubitVarName)) {
-						auto temp = lineStrs[i];
-						boost::replace_all(temp, qubitVarName, "");
-						boost::replace_all(temp, "[", "");
-						boost::replace_all(temp, "]", "");
-
-						qubitIds.push_back(std::stoi(temp));
-					}
-				}
-
-				auto inst = gateRegistry->createInstruction(pqGate, qubitIds);
-				int i = 0;
-				for(auto p : params) {
-					inst->setParameter(i, p);
-					i++;
-				}
-
-				function->addInstruction(inst);
-
-			} else {
-				auto gate = lineStrs[0];
-				if (lineStrs[0] == "CX") {
-					gate = "CNOT";
-				}
-
-				std::vector<int> qubitIds;
-				bool isAGateOnMultipleQbits = false;
-				for (int i = 1; i < lineStrs.size(); i++) {
-					if (boost::contains(lineStrs[i], qubitVarName)) {
-
-						auto temp = lineStrs[i];
-						boost::replace_all(temp, qubitVarName, "");
-						boost::replace_all(temp, "[", "");
-						boost::replace_all(temp, "]", "");
-
-						if (boost::contains(temp, "-")) {
-							std::cout << "CONTAINS: " << temp << "\n";
-							isAGateOnMultipleQbits = true;
-							std::vector<std::string> split;
-							boost::split(split, temp, boost::is_any_of("-"));
-							int begin = std::stoi(split[0]);
-							int end = std::stoi(split[1]);
-							qubitIds.resize(end-begin+1);
-
-							std::iota(qubitIds.begin(), qubitIds.end(), begin);
-
-							std::cout << gate << " on ";
-							for (auto q : qubitIds) {
-								std::cout << q << ", ";
-							}
-							std::cout << "\n";
-						} else {
-							qubitIds.push_back(std::stoi(temp));
-						}
-					}
-				}
-
-				if (isAGateOnMultipleQbits) {
-					for (auto q : qubitIds) {
-						auto inst = gateRegistry->createInstruction(gate, std::vector<int>{q});
-
-						if (gate == "Measure") {
-							InstructionParameter p(q);
-							inst->setParameter(0, p);
-						}
-
-						function->addInstruction(inst);
-					}
-
-				} else {
-					auto inst = gateRegistry->createInstruction(gate, qubitIds);
-
-					function->addInstruction(inst);
-				}
-
-			}
-		}
-	}
-
-	ir->addKernel(function);
-
-	return ir;
-}
-
-const std::string ProjectQCompiler::translate(const std::string& bufferVariable,
-		std::shared_ptr<Function> function) {
-//	auto visitor = std::make_shared<ProjectQVisitor>();
-//	InstructionIterator it(function);
-//	while (it.hasNext()) {
-//		// Get the next node in the tree
-//		auto nextInst = it.next();
-//		if (nextInst->isEnabled()) {
-//			nextInst->accept(visitor);
-//		}
-//	}
-//
-//	return visitor->getQuilString();
-}
-
-}
+    }
 
 }

@@ -34,4 +34,3 @@ if(PROJECTQ_BUILD_TESTS)
    include_directories(${CMAKE_SOURCE_DIR}/compiler)
    add_subdirectory(tests)
 endif()
-   
