@@ -96,33 +96,68 @@ namespace xacc {
             std::string gateName = ctx->gatename()->getText();
             if (gateName == "CX") gateName = "CNOT";
 
-            std::vector<int> qubits;
-            for (int i = 0; i < ctx->qbitarglist()->qbit().size(); i++) {
-                qubits.push_back(std::stoi(ctx->qbitarglist()->qbit(static_cast<size_t>(i))->INT()->getText()));
-            }
+            std::vector<std::shared_ptr<xacc::Instruction>> instructions;
+            std::shared_ptr<xacc::Instruction> instruction;
 
-            std::shared_ptr<xacc::Instruction> instruction(gateRegistry->createInstruction(gateName, qubits));
+            // Check for qubit range
+            if (ctx->qbitarglist()->qbit().size() == 1 && ctx->qbitarglist()->qbit(0)->INT().size() == 2) {
+                int startQbit = std::stoi(ctx->qbitarglist()->qbit(0)->INT(0)->getText());
+                int endQbit = std::stoi(ctx->qbitarglist()->qbit(0)->INT(1)->getText());
+                if (endQbit <= startQbit)
+                    xacc::error("Invalid qubit range.");
+                for (int i = startQbit; i <= endQbit; i++) {
+                    instruction = gateRegistry->createInstruction(gateName, { i });
+                    instructions.push_back(instruction);
+                }
+            } else {
+                std::vector<int> qubits;
+                for (int i = 0; i < ctx->qbitarglist()->qbit().size(); i++) {
+                    qubits.push_back(std::stoi(ctx->qbitarglist()->qbit(static_cast<size_t>(i))->INT(0)->getText()));
+                }
+                instruction = gateRegistry->createInstruction(gateName, qubits);
+                instructions.push_back(instruction);
+            }
 
             if (ctx->paramlist() != nullptr) {
                 InstructionParameter param;
                 for (int i = 0; i < ctx->paramlist()->param().size(); i++) {
-                    param = strToParam(ctx->paramlist()->param(i)->getText());
-                    instruction->setParameter(i, param);
+                    param = strToParam(ctx->paramlist()->param(static_cast<size_t>(i))->getText());
+                    for (int j = 0; j < instructions.size(); j++) {
+                        instructions[j]->setParameter(i, param);
+                    }
                 }
             }
 
-            curFunc->addInstruction(instruction);
+            for (int i = 0; i < instructions.size(); i++) {
+                curFunc->addInstruction(instructions[i]);
+            }
         }
 
         void ProjectQToXACCListener::exitMeasure(projectq::ProjectQParser::MeasureContext *ctx) {
-            std::vector<int> qubits;
-            qubits.push_back(std::stoi(ctx->qbit()->INT()->getText()));
+            std::shared_ptr<xacc::Instruction> instruction;
+            InstructionParameter param;
 
-            std::shared_ptr<xacc::Instruction> instruction(gateRegistry->createInstruction("Measure", qubits));
-            InstructionParameter param(qubits[0]);
-            instruction->setParameter(0, param);
+            // Check for qubit range
 
-            curFunc->addInstruction(instruction);
+            if (ctx->qbit()->INT().size() == 2) {
+                int startQbit = std::stoi(ctx->qbit()->INT(0)->getText());
+                int endQbit = std::stoi(ctx->qbit()->INT(1)->getText());
+                if (endQbit <= startQbit)
+                    xacc::error("Invalid qubit range.");
+                for (int i = startQbit; i <= endQbit; i++) {
+                    instruction = gateRegistry->createInstruction("Measure", { i });
+                    param = i;
+                    instruction->setParameter(0, param);
+                    curFunc->addInstruction(instruction);
+                }
+            } else {
+                std::vector<int> qubits;
+                qubits.push_back(std::stoi(ctx->qbit()->INT(0)->getText()));
+                instruction = gateRegistry->createInstruction("Measure", qubits);
+                param = 0;
+                instruction->setParameter(0, param);
+                curFunc->addInstruction(instruction);
+            }
         }
     }
 }

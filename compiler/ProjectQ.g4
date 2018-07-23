@@ -75,11 +75,12 @@ qbitarglist         : qbit
                     | '(' qbit (',' qbit)* ')'
                     ;
 
-qbit                : qreg '[' INT ']' ;
+qbit                : qreg '[' INT ('-' INT)? ']' ;
 
 qreg                : QREG ;
 
 expr                : '(' expr ')'
+                    | '-' expr
                     | expr POWER expr
                     | expr (TIMES | DIVIDE) expr
                     | expr (PLUS | MINUS) expr
@@ -101,7 +102,7 @@ MEASURE             : 'Measure' ;
 
 IDENTIFIER          : [A-Za-z_] [A-Za-z0-9_]* ;
 
-INT                 : SIGN? DIGIT+ ;
+INT           : DIGIT+ ;
 FLOAT               : INT EXPONENT
                     | DIGIT* '.' DIGIT+ EXPONENT?
                     ;
