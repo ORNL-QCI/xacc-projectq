@@ -37,6 +37,8 @@ set (LIBRARY_NAME xacc-projectq-compiler)
 file (GLOB_RECURSE HEADERS *.hpp)
 file (GLOB SRC *.cpp generated/*.cpp)
 
+include_directories(generated)
+
 # Set up dependencies to resources to track changes
 usFunctionGetResourceSource(TARGET ${LIBRARY_NAME} OUT SRC)
 # Generate bundle initialization code
@@ -67,61 +69,6 @@ usFunctionEmbedResources(TARGET ${LIBRARY_NAME}
   FILES
     manifest.json
   )
-
-
-# ANTLR setup
-
-add_subdirectory(runtime)
-
-set(xacc_projectq_compiler-GENERATED_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated/ProjectQLexer.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated/ProjectQParser.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated/ProjectQBaseListener.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated/ProjectQListener.cpp
-        )
-
-foreach( src_file ${xacc_projectq_compiler-GENERATED_SRC} )
-    set_source_files_properties(
-            ${src_file}
-            PROPERTIES
-            GENERATED TRUE
-    )
-endforeach( src_file )
-
-include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src/misc
-        ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src/atn
-        ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src/dfa
-        ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src/tree
-        ${CMAKE_CURRENT_SOURCE_DIR}/runtime/src/support
-        ${CMAKE_CURRENT_SOURCE_DIR}/generated
-)
-
-set(xacc_projectq_compiler_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/ProjectQCompiler.cpp
-        ${xacc_projectq_compiler-GENERATED_SRC}
-        )
-
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set (flags_1 "-Wno-overloaded-virtual")
-else()
-    set (flags_1 "-MP /wd4251")
-endif()
-
-foreach( src_file ${xacc_projectq_compiler_SRC} )
-    set_source_files_properties(
-            ${src_file}
-            PROPERTIES
-            COMPILE_FLAGS "${COMPILE_FLAGS} ${flags_1}"
-    )
-endforeach( src_file )
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(xacc_projectq_compiler PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-endif()
-
-target_link_libraries(${LIBRARY_NAME} antlr4_static)
 
 target_link_libraries(${LIBRARY_NAME} ${XACC_LIBRARIES})
 if(APPLE)

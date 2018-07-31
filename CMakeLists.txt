@@ -24,13 +24,14 @@ include_directories(${CMAKE_SOURCE_DIR}/utils)
 
 link_directories(${XACC_LIBRARY_DIR})
 
-add_subdirectory(compiler)
+if(${XACC_HAS_ANTLR})
+    add_subdirectory(compiler)
+endif()
 if(PYTHON_INCLUDE_DIR)
    add_subdirectory(python)
 endif()
 
 if(PROJECTQ_BUILD_TESTS)
    add_subdirectory(examples)
-   include_directories(${CMAKE_SOURCE_DIR}/compiler)
    add_subdirectory(tests)
 endif()
