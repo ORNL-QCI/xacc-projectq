@@ -30,7 +30,6 @@
  *
  **********************************************************************************/
 #include "ProjectQCompiler.hpp"
-#include <boost/tokenizer.hpp>
 #include "IRProvider.hpp"
 #include "ProjectQLexer.h"
 #include "ProjectQParser.h"

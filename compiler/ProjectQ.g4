@@ -57,6 +57,7 @@ projectqprog        : instr? (NEWLINE+ instr)* NEWLINE* ;
 instr               : gate
                     | allocate
                     | measure
+                    | kernelcall
                     ;
 
 gate                : gatename paramlist? '|' qbitarglist ;
@@ -102,7 +103,7 @@ MEASURE             : 'Measure' ;
 
 IDENTIFIER          : [A-Za-z_] [A-Za-z0-9_]* ;
 
-INT           : DIGIT+ ;
+INT                 : DIGIT+ ;
 FLOAT               : INT EXPONENT
                     | DIGIT* '.' DIGIT+ EXPONENT?
                     ;
