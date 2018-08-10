@@ -39,7 +39,7 @@ using namespace xacc::quantum;
 
 TEST(ProjectQCompilerTester, checkTeleportProjectQ) {
 
-	const std::string src = R"src(__qpu__ testF() {
+	const std::string src = R"src(__qpu__ testF(AcceleratorBuffer ab) {
 Allocate | Qureg[0]
 Allocate | Qureg[1]
 Allocate | Qureg[2]

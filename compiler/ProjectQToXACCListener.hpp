@@ -1,5 +1,5 @@
 /***********************************************************************************
- * Copyright (c) 2017, UT-Battelle
+ * Copyright (c) 2018, UT-Battelle
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,55 +25,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Contributors:
- *   Initial API and implementation - Alex McCaskey
- *   ANTLR compiler implementation - H. Charles Zhao
+ *   Initial implementation - H. Charles Zhao
  *
  **********************************************************************************/
-#include "ProjectQCompiler.hpp"
+#ifndef XACC_PROJECTQ_PROJECTQTOXACCLISTENER_H
+#define XACC_PROJECTQ_PROJECTQTOXACCLISTENER_H
+
+#include "ProjectQBaseListener.h"
+#include "IR.hpp"
 #include "IRProvider.hpp"
-#include "ProjectQLexer.h"
-#include "ProjectQParser.h"
-#include "XACC.hpp"
-#include "ProjectQToXACCListener.hpp"
-#include "ProjectQErrorListener.hpp"
 
 using namespace projectq;
-using namespace antlr4;
 
 namespace xacc {
-
     namespace quantum {
+        class ProjectQToXACCListener : public ProjectQBaseListener {
+            std::shared_ptr<IR> ir;
+            std::shared_ptr<IRProvider> gateRegistry;
+            std::map<std::string, std::shared_ptr<Function>> functions;
+            std::shared_ptr<Function> curFunc;
+        public:
+            explicit ProjectQToXACCListener(std::shared_ptr<IR>);
 
-        ProjectQCompiler::ProjectQCompiler() = default;
+            void enterXacckernel(ProjectQParser::XacckernelContext *ctx);
 
-        std::shared_ptr<IR> ProjectQCompiler::compile(const std::string &src,
-                                                      std::shared_ptr<Accelerator> acc) {
-            accelerator = acc;
-            return compile(src);
-        }
+            void exitXacckernel(ProjectQParser::XacckernelContext *ctx);
 
-        std::shared_ptr<IR> ProjectQCompiler::compile(const std::string &src) {
-            ANTLRInputStream input(src);
-            ProjectQLexer lexer(&input);
-            CommonTokenStream tokens(&lexer);
-            ProjectQParser parser(&tokens);
-            parser.removeErrorListeners();
-            parser.addErrorListener(new ProjectQErrorListener());
+            void exitKernelcall(ProjectQParser::KernelcallContext *ctx);
 
-            auto ir(xacc::getService<IRProvider>("gate")->createIR());
+            void exitGate(ProjectQParser::GateContext *ctx);
 
-            tree::ParseTree *tree(parser.xaccsrc());
-            ProjectQToXACCListener listener(ir);
-            tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
-
-            return ir;
-        }
-
-        const std::string ProjectQCompiler::translate(const std::string &bufferVariable,
-                                                      std::shared_ptr<Function> function) {
-            return "";
-        }
-
+            void exitMeasure(ProjectQParser::MeasureContext *ctx);
+        };
     }
-
 }
+
+#endif //XACC_PROJECTQ_PROJECTQTOXACCLISTENER_H

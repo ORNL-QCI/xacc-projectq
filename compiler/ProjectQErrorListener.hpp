@@ -1,5 +1,5 @@
 /***********************************************************************************
- * Copyright (c) 2017, UT-Battelle
+ * Copyright (c) 2018, UT-Battelle
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,55 +25,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Contributors:
- *   Initial API and implementation - Alex McCaskey
- *   ANTLR compiler implementation - H. Charles Zhao
+ *   Initial implementation - H. Charles Zhao
  *
  **********************************************************************************/
-#include "ProjectQCompiler.hpp"
-#include "IRProvider.hpp"
-#include "ProjectQLexer.h"
-#include "ProjectQParser.h"
-#include "XACC.hpp"
-#include "ProjectQToXACCListener.hpp"
-#include "ProjectQErrorListener.hpp"
+#ifndef XACC_PROJECTQ_ERRORLISTENER_HPP
+#define XACC_PROJECTQ_ERRORLISTENER_HPP
 
-using namespace projectq;
 using namespace antlr4;
 
-namespace xacc {
-
-    namespace quantum {
-
-        ProjectQCompiler::ProjectQCompiler() = default;
-
-        std::shared_ptr<IR> ProjectQCompiler::compile(const std::string &src,
-                                                      std::shared_ptr<Accelerator> acc) {
-            accelerator = acc;
-            return compile(src);
-        }
-
-        std::shared_ptr<IR> ProjectQCompiler::compile(const std::string &src) {
-            ANTLRInputStream input(src);
-            ProjectQLexer lexer(&input);
-            CommonTokenStream tokens(&lexer);
-            ProjectQParser parser(&tokens);
-            parser.removeErrorListeners();
-            parser.addErrorListener(new ProjectQErrorListener());
-
-            auto ir(xacc::getService<IRProvider>("gate")->createIR());
-
-            tree::ParseTree *tree(parser.xaccsrc());
-            ProjectQToXACCListener listener(ir);
-            tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
-
-            return ir;
-        }
-
-        const std::string ProjectQCompiler::translate(const std::string &bufferVariable,
-                                                      std::shared_ptr<Function> function) {
-            return "";
-        }
-
+class ProjectQErrorListener : public BaseErrorListener {
+public:
+    void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line, size_t charPositionInLine,
+                     const std::__cxx11::string &msg, std::__exception_ptr::exception_ptr e) override {
+        std::ostringstream output;
+        output << "Invalid ProjectQ source: ";
+        output << "line " << line << ":" << charPositionInLine << " " << msg;
+        xacc::error(output.str());
     }
+};
 
-}
+#endif //XACC_PROJECTQ_ERRORLISTENER_HPP

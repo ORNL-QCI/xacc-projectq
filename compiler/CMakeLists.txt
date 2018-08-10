@@ -26,6 +26,7 @@
 #
 # Contributors:
 #   Initial API and implementation - Alex McCaskey
+#   ANTLR compiler implementation - H. Charles Zhao
 #
 #**********************************************************************************/
 
@@ -34,7 +35,9 @@ set (PACKAGE_DESCIPTION "ProjectQ XACC Compiler Bundle")
 set (LIBRARY_NAME xacc-projectq-compiler)
 
 file (GLOB_RECURSE HEADERS *.hpp)
-file (GLOB SRC *.cpp)
+file (GLOB SRC *.cpp generated/*.cpp)
+
+include_directories(generated)
 
 # Set up dependencies to resources to track changes
 usFunctionGetResourceSource(TARGET ${LIBRARY_NAME} OUT SRC)
@@ -76,5 +79,5 @@ else()
    set_target_properties(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-shared")
 endif()
 
-install(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/plugins) 
+install(TARGETS ${LIBRARY_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/plugins)
 

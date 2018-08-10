@@ -63,14 +63,6 @@ public:
 	virtual std::shared_ptr<xacc::IR> compile(const std::string& src);
 
 	/**
-	 * Return the name of this Compiler
-	 * @return name Compiler name
-	 */
-	virtual const std::string getName() {
-		return "projectq-qasm";
-	}
-
-	/**
 	 * This produces a Quil source code representation of the
 	 * given IR Function
 	 *
