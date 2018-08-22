@@ -77,7 +77,7 @@ Measure | Qureg[0-3]
 })src";
 
 
-	auto compiler = std::make_shared<ProjectQCompiler>();
+	auto compiler = xacc::getService<Compiler>("projectq-qasm");//std::make_shared<ProjectQCompiler>();
 	auto ir = compiler->compile(src);
 	auto qir = std::dynamic_pointer_cast<GateIR>(ir);
 
