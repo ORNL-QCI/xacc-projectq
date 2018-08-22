@@ -1,4 +1,4 @@
-[![Build Status](http://ci.eclipse.org/xacc/buildStatus/icon?job=xacc-projectq-ci)](http://ci.eclipse.org/xacc/job/xacc-projectq-ci/)
+[![Build Status](https://travis-ci.org/ORNL-QCI/xacc-projectq.svg?branch=master)](https://travis-ci.org/ORNL-QCI/xacc-projectq)
 
 # XACC Plugins for working with ProjectQ
 This plugin for XACC provides a Compiler implementation for the ProjectQ QASM syntax. 
