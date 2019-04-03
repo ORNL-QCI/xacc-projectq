@@ -36,6 +36,7 @@
 #include "XACC.hpp"
 #include "ProjectQToXACCListener.hpp"
 #include "ProjectQErrorListener.hpp"
+#include "xacc_service.hpp"
 
 using namespace projectq;
 using namespace antlr4;

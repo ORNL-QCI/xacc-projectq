@@ -36,6 +36,7 @@
 #include "IRProvider.hpp"
 #include "IR.hpp"
 #include "ProjectQToXACCListener.hpp"
+#include "xacc_service.hpp"
 
 using namespace projectq;
 

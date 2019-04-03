@@ -32,6 +32,7 @@
 #include "ProjectQCompiler.hpp"
 #include "GateIR.hpp"
 #include "CountGatesOfTypeVisitor.hpp"
+#include "xacc_service.hpp"
 
 using namespace xacc;
 
